@@ -1,0 +1,51 @@
+using FCG.Application.Interfaces;
+using FCG.Domain.Interfaces;
+using FCG.Infrastructure.Context;
+using FCG.Infrastructure.Identity;
+using FCG.Infrastructure.Messaging;
+using FCG.Infrastructure.Repository;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using RabbitMQ.Client;
+
+namespace FCG.Infrastructure
+{
+    public static class DependencyInjection
+    {
+        public static IServiceCollection AddInfrastructure(
+            this IServiceCollection services,
+            IConfiguration configuration)
+        {
+            services.AddDbContext<FcgDbContext>(options =>
+                options.UseSqlServer(
+                    configuration.GetConnectionString("DefaultConnection"),
+                    b => b.MigrationsAssembly("FCG.Infrastructure")
+                ));
+
+            services.AddIdentity<ApplicationUser, IdentityRole>()
+                .AddRoles<IdentityRole>()
+                .AddEntityFrameworkStores<FcgDbContext>();
+
+            services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+
+            // RabbitMQ
+            services.AddSingleton<IConnection>(sp =>
+            {
+                var factory = new ConnectionFactory
+                {
+                    HostName = configuration["RabbitMQ:Host"] ?? "localhost",
+                    Port = int.Parse(configuration["RabbitMQ:Port"] ?? "5672"),
+                    UserName = configuration["RabbitMQ:Usuario"] ?? "guest",
+                    Password = configuration["RabbitMQ:Senha"] ?? "guest"
+                };
+                return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+            });
+
+            services.AddScoped<IMessagePublisher, RabbitMQPublisher>();
+
+            return services;
+        }
+    }
+}

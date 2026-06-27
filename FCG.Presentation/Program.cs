@@ -1,8 +1,11 @@
 using FCG.Application.Configuration;
 using FCG.Infrastructure;
+using FCG.Infrastructure.Context; 
 using FCG.Presentation;
 using FCG.Presentation.Middlewares;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +17,9 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
+    var db = scope.ServiceProvider.GetRequiredService<FcgDbContext>(); 
+    db.Database.Migrate();
+
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     string[] roles = ["Usuario", "Admin"];
     foreach (var role in roles)
@@ -23,11 +29,9 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-if (app.Environment.IsDevelopment())
-{
+
     app.UseSwagger();
     app.UseSwaggerUI();
-}
 
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();

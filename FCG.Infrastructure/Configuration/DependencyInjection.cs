@@ -1,3 +1,6 @@
+using Amazon;
+using Amazon.Runtime;
+using Amazon.SQS;
 using FCG.Application.Interfaces;
 using FCG.Domain.Interfaces;
 using FCG.Infrastructure.Context;
@@ -44,6 +47,19 @@ namespace FCG.Infrastructure
             });
 
             services.AddScoped<IMessagePublisher, RabbitMQPublisher>();
+
+            // SQS (trigger do NotificationsAPI serverless)
+            services.AddSingleton<IAmazonSQS>(sp =>
+            {
+                var sqsConfig = new AmazonSQSConfig
+                {
+                    ServiceURL = configuration["AWS:SqsServiceUrl"] ?? "http://localhost:4566",
+                    AuthenticationRegion = RegionEndpoint.USEast1.SystemName
+                };
+                return new AmazonSQSClient(new BasicAWSCredentials("test", "test"), sqsConfig);
+            });
+
+            services.AddScoped<ISqsPublisher, SqsPublisher>();
 
             return services;
         }

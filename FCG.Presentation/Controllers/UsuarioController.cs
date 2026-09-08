@@ -5,6 +5,7 @@ using FCG.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging; 
 
 namespace FCG.Presentation.Controllers
 {
@@ -14,17 +15,20 @@ namespace FCG.Presentation.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ITokenService _tokenService;
         private readonly IUsuarioService _usuarioService;
+        private readonly ILogger<UsuarioController> _logger;
 
         public UsuarioController(
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager,
             ITokenService tokenService,
-            IUsuarioService usuarioService)
+            IUsuarioService usuarioService,
+            ILogger<UsuarioController> logger)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _tokenService = tokenService;
             _usuarioService = usuarioService;
+            _logger = logger;
         }
 
         [HttpPost("api/usuarios/registrar")]
@@ -42,7 +46,11 @@ namespace FCG.Presentation.Controllers
 
             var identityResult = await _userManager.CreateAsync(identityUser, request.Senha);
             if (!identityResult.Succeeded)
+            {
+                _logger.LogWarning("Falha ao registrar usuário {Email}: {Erros}",
+                    request.Email, string.Join("; ", identityResult.Errors.Select(e => e.Description)));
                 return BadRequest(identityResult.Errors);
+            }
 
             await _userManager.AddToRoleAsync(identityUser, "Usuario");
 
@@ -51,6 +59,8 @@ namespace FCG.Presentation.Controllers
             var roles = await _userManager.GetRolesAsync(identityUser);
             var token = _tokenService.GerarToken(identityUser.Email!, roles);
 
+            _logger.LogInformation("Usuário {Id} registrado com sucesso ({Email})", identityUser.Id, identityUser.Email);
+
             return Ok(token);
         }
 
@@ -58,17 +68,19 @@ namespace FCG.Presentation.Controllers
         public async Task<IActionResult> Login([FromBody] LoginUsuarioRequest request)
         {
             if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Dados de entrada inválidos");
                 return BadRequest(ModelState);
+            }
 
             var response = await _signInManager.PasswordSignInAsync(
-                request.Email,
-                request.Senha,
-                isPersistent: false,
-                lockoutOnFailure: false
-            );
+                request.Email, request.Senha, isPersistent: false, lockoutOnFailure: false);
 
             if (!response.Succeeded)
+            {
+                _logger.LogWarning("Tentativa de login falhou para o email {Email}", request.Email);
                 return Unauthorized("Usuário ou senha inválidos.");
+            }
 
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
@@ -77,18 +89,28 @@ namespace FCG.Presentation.Controllers
             var roles = await _userManager.GetRolesAsync(user);
             var token = _tokenService.GerarToken(user.Email!, roles);
 
+            _logger.LogInformation("Usuário {Email} autenticado com sucesso", user.Email);
+
             return Ok(token);
         }
-        
+                
         [HttpGet("api/usuarios/por-email")]
         public async Task<IActionResult> ObterPorEmail([FromQuery] string email)
         {
             if (string.IsNullOrWhiteSpace(email))
+            {
+                _logger.LogWarning("Requisição de busca por email recebida sem o parâmetro email");
                 return BadRequest("O email é obrigatório.");
+            }
 
             var usuario = await _usuarioService.ObterPorEmailAsync(email);
             if (usuario == null)
+            {
+                _logger.LogWarning("Usuário não encontrado para o email {Email}", email);
                 return NotFound("Usuário não encontrado.");
+            }
+
+            _logger.LogInformation("Usuário {Id} encontrado para o email {Email}", usuario.Id, email);
 
             return Ok(new UsuarioIdResponse { Id = usuario.Id });
         }
@@ -102,7 +124,10 @@ namespace FCG.Presentation.Controllers
 
             var usuario = await _userManager.FindByEmailAsync(request.Email);
             if (usuario == null)
+            {
+                _logger.LogWarning("Tentativa de alteração de senha para email inexistente: {Email}", request.Email);
                 return NotFound("Usuário não encontrado.");
+            }
 
             var result = await _userManager.ChangePasswordAsync(
                 usuario,
@@ -111,7 +136,13 @@ namespace FCG.Presentation.Controllers
             );
 
             if (!result.Succeeded)
+            {
+                _logger.LogWarning("Falha ao alterar senha do usuário {Email}: {Erros}",
+                    request.Email, string.Join("; ", result.Errors.Select(e => e.Description)));
                 return BadRequest(result.Errors);
+            }
+
+            _logger.LogInformation("Senha alterada com sucesso para o usuário {Email}", request.Email);
 
             return Ok("Senha alterada com sucesso.");
         }

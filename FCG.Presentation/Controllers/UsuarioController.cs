@@ -1,5 +1,6 @@
 using FCG.Application.Interfaces;
 using FCG.Application.Requests.Usuarios;
+using FCG.Application.Responses.Usuarios;
 using FCG.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -79,6 +80,19 @@ namespace FCG.Presentation.Controllers
             return Ok(token);
         }
         
+        [HttpGet("api/usuarios/por-email")]
+        public async Task<IActionResult> ObterPorEmail([FromQuery] string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return BadRequest("O email é obrigatório.");
+
+            var usuario = await _usuarioService.ObterPorEmailAsync(email);
+            if (usuario == null)
+                return NotFound("Usuário não encontrado.");
+
+            return Ok(new UsuarioIdResponse { Id = usuario.Id });
+        }
+
         [Authorize]
         [HttpPost("api/usuarios/alterar-senha")]
         public async Task<IActionResult> AlterarSenha([FromBody] AlterarSenhaRequest request)

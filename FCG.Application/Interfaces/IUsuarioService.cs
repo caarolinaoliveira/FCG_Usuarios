@@ -8,6 +8,7 @@ namespace FCG.Application.Interfaces
     {
         Task CriarAsync(string identityUserId, CriarUsuarioRequest request);
         Task<UsuarioEntity?> ObterPorIdentityIdAsync(string identityUserId);
+        Task<UsuarioEntity?> ObterPorEmailAsync(string email);
 
     }
 }

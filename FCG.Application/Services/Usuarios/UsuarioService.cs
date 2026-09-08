@@ -45,5 +45,8 @@ namespace FCG.Application.Services
 
         public async Task<UsuarioEntity?> ObterPorIdentityIdAsync(string identityUserId)
             => await _repository.ObterPorIdentityIdAsync(identityUserId);
+
+        public async Task<UsuarioEntity?> ObterPorEmailAsync(string email)
+            => await _repository.ObterPorEmailAsync(email);
     }
 }

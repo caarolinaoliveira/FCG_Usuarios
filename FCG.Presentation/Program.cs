@@ -1,13 +1,24 @@
+using System.Diagnostics;
 using FCG.Application.Configuration;
 using FCG.Infrastructure;
-using FCG.Infrastructure.Context; 
+using FCG.Infrastructure.Context;
 using FCG.Presentation;
+using FCG.Presentation.Logging;
 using FCG.Presentation.Middlewares;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 
+ActivitySource.AddActivityListener(new ActivityListener
+{
+    ShouldListenTo = _ => true,
+    Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData
+});
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.AddConsole(options => options.FormatterName = "compact")
+    .AddConsoleFormatter<CompactConsoleFormatter, Microsoft.Extensions.Logging.Console.ConsoleFormatterOptions>();
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);

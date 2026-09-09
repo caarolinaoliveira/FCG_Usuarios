@@ -5,12 +5,14 @@ using FCG.Application.Interfaces;
 using FCG.Domain.Interfaces;
 using FCG.Infrastructure.Context;
 using FCG.Infrastructure.Identity;
+using FCG.Infrastructure.Logging;
 using FCG.Infrastructure.Messaging;
 using FCG.Infrastructure.Repository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
 using RabbitMQ.Client;
 
 namespace FCG.Infrastructure
@@ -60,6 +62,11 @@ namespace FCG.Infrastructure
             });
 
             services.AddScoped<ISqsPublisher, SqsPublisher>();
+
+            services.AddSingleton<IMongoClient>(sp =>
+                new MongoClient(configuration["MongoDB:ConnectionString"] ?? "mongodb://localhost:27017"));
+
+            services.AddSingleton<IErroLogService, ErroLogService>();
 
             return services;
         }

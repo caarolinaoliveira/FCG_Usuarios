@@ -5,16 +5,21 @@ using FCG.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Logging; 
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace FCG.Presentation.Controllers
 {
     public class UsuarioController : ControllerBase
     {
+        private const string CacheKeyRolesUsuarioPrefix = "usuarios:roles:";
+
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ITokenService _tokenService;
         private readonly IUsuarioService _usuarioService;
+        private readonly IDistributedCache _cache;
         private readonly ILogger<UsuarioController> _logger;
 
         public UsuarioController(
@@ -22,12 +27,14 @@ namespace FCG.Presentation.Controllers
             UserManager<ApplicationUser> userManager,
             ITokenService tokenService,
             IUsuarioService usuarioService,
+            IDistributedCache cache,
             ILogger<UsuarioController> logger)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _tokenService = tokenService;
             _usuarioService = usuarioService;
+            _cache = cache;
             _logger = logger;
         }
 
@@ -86,7 +93,7 @@ namespace FCG.Presentation.Controllers
             if (user == null)
                 return Unauthorized();
 
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = await ObterRolesComCacheAsync(user);
             var token = _tokenService.GerarToken(user.Email!, roles);
 
             _logger.LogInformation("Usuário {Email} autenticado com sucesso", user.Email);
@@ -145,6 +152,27 @@ namespace FCG.Presentation.Controllers
             _logger.LogInformation("Senha alterada com sucesso para o usuário {Email}", request.Email);
 
             return Ok("Senha alterada com sucesso.");
+        }
+
+        private async Task<IList<string>> ObterRolesComCacheAsync(ApplicationUser user)
+        {
+            var cacheKey = $"{CacheKeyRolesUsuarioPrefix}{user.Id}";
+            var cacheado = await _cache.GetStringAsync(cacheKey);
+
+            if (cacheado is not null)
+            {
+                NewRelic.Api.Agent.NewRelic.GetAgent().CurrentTransaction.AddCustomAttribute("cacheHit", true);
+                return JsonSerializer.Deserialize<List<string>>(cacheado) ?? new List<string>();
+            }
+
+            NewRelic.Api.Agent.NewRelic.GetAgent().CurrentTransaction.AddCustomAttribute("cacheHit", false);
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(roles),
+                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) });
+
+            return roles;
         }
     }
 }

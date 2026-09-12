@@ -35,6 +35,11 @@ namespace FCG.Infrastructure
 
             services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = configuration["Redis:ConnectionString"] ?? "localhost:6379";
+            });
+
             // RabbitMQ
             services.AddSingleton<IConnection>(sp =>
             {

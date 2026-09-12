@@ -17,6 +17,7 @@
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="NewRelic.Agent" Version="10.35.0" />
+    <PackageReference Include="NewRelic.Agent.Api" Version="10.35.0" />
   </ItemGroup>
 
   <ItemGroup>

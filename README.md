@@ -24,6 +24,10 @@ Microsserviço responsável pelo cadastro, autenticação e autorização de usu
 | GET | `/api/usuarios/perfil` | Retorna dados do usuário autenticado |
 | PUT | `/api/usuarios/alterar-senha` | Altera senha do usuário |
 
+## Health check
+
+`GET /health` responde `200 Healthy` quando o processo está de pé. É usado pelas probes de readiness e liveness do Kubernetes.
+
 ## Variáveis de ambiente
 
 | Variável | Obrigatória | Descrição | Padrão |

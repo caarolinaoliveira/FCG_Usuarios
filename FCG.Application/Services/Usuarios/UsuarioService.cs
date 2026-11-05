@@ -10,13 +10,11 @@ namespace FCG.Application.Services
     {
         private readonly IUsuarioRepository _repository;
         private readonly IMessagePublisher _messagePublisher;
-        private readonly ISqsPublisher _sqsPublisher;
 
-        public UsuarioService(IUsuarioRepository repository, IMessagePublisher messagePublisher, ISqsPublisher sqsPublisher)
+        public UsuarioService(IUsuarioRepository repository, IMessagePublisher messagePublisher)
         {
             _repository = repository;
             _messagePublisher = messagePublisher;
-            _sqsPublisher = sqsPublisher;
         }
 
         public async Task CriarAsync(string identityUserId, CriarUsuarioRequest request)
@@ -40,7 +38,6 @@ namespace FCG.Application.Services
             };
 
             await _messagePublisher.PublicarAsync(evento, "user.created");
-            await _sqsPublisher.PublicarAsync(evento, "user-created");
         }
 
         public async Task<UsuarioEntity?> ObterPorIdentityIdAsync(string identityUserId)

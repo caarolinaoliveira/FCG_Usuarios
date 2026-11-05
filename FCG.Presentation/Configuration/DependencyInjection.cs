@@ -61,8 +61,9 @@ namespace FCG.Presentation
             var jwtSettingsSection = configuration.GetSection("JwtSettings");
             services.Configure<JwtSettings>(jwtSettingsSection);
 
-            var jwtSettings = jwtSettingsSection.Get<JwtSettings>();
-            var key = Encoding.UTF8.GetBytes(jwtSettings!.Segredo);
+            var jwtSettings = jwtSettingsSection.Get<JwtSettings>() ?? new JwtSettings();
+            var segredo = ObterSegredoJwt(jwtSettings);
+            var key = Encoding.UTF8.GetBytes(segredo);
 
             services.AddAuthentication(options =>
             {
@@ -84,6 +85,24 @@ namespace FCG.Presentation
             });
 
             return services;
+        }
+
+        private const int TamanhoMinimoSegredoJwt = 32;
+
+        private static string ObterSegredoJwt(JwtSettings jwtSettings)
+        {
+            if (string.IsNullOrWhiteSpace(jwtSettings.Segredo))
+                throw new InvalidOperationException(
+                    "Configuração obrigatória 'JwtSettings:Segredo' não encontrada. " +
+                    "Defina via 'dotnet user-secrets' (desenvolvimento) ou pela variável de ambiente " +
+                    "'JwtSettings__Segredo' (produção, injetada pelo Azure Key Vault).");
+
+            if (jwtSettings.Segredo.Length < TamanhoMinimoSegredoJwt)
+                throw new InvalidOperationException(
+                    $"'JwtSettings:Segredo' deve ter no mínimo {TamanhoMinimoSegredoJwt} caracteres " +
+                    $"(valor atual tem {jwtSettings.Segredo.Length}).");
+
+            return jwtSettings.Segredo;
         }
     }
 }

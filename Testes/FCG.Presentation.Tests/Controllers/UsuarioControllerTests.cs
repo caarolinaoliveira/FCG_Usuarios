@@ -237,16 +237,46 @@ public class UsuarioControllerTests
             await _cache.DidNotReceiveWithAnyArgs().SetAsync(default!, default!, default!, default);
         }
 
-        [Fact(Skip = "Bug conhecido: o cache é só otimização, mas uma falha do Redis derruba o login com 500.")]
+        [Fact]
         public async Task Redis_fora_do_ar_nao_impede_o_login()
         {
             var usuario = UsuarioIdentity();
             LoginAceitoPara(usuario, "Usuario");
             _cache.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).ThrowsAsync(new InvalidOperationException("Redis indisponível"));
+            _cache.SetAsync(default!, default!, default!, default).ThrowsAsyncForAnyArgs(new InvalidOperationException("Redis indisponível"));
+            IEnumerable<string>? rolesNoToken = null;
+            _tokenService.GerarToken("maria@fcg.com", Arg.Do<IEnumerable<string>>(r => rolesNoToken = r.ToList())).Returns("jwt-token");
 
             var resultado = await _controller.Login(LoginValido());
 
             Assert.IsType<OkObjectResult>(resultado);
+            Assert.Equal(new[] { "Usuario" }, rolesNoToken);
+            await _userManager.Received(1).GetRolesAsync(usuario);
+        }
+
+        [Fact]
+        public async Task Falha_ao_gravar_no_cache_nao_impede_o_login()
+        {
+            var usuario = UsuarioIdentity();
+            LoginAceitoPara(usuario, "Usuario");
+            _cache.SetAsync(default!, default!, default!, default).ThrowsAsyncForAnyArgs(new InvalidOperationException("Redis indisponível"));
+
+            var resultado = await _controller.Login(LoginValido());
+
+            Assert.IsType<OkObjectResult>(resultado);
+        }
+
+        [Fact]
+        public async Task Entrada_corrompida_no_cache_e_tratada_como_miss()
+        {
+            var usuario = UsuarioIdentity();
+            LoginAceitoPara(usuario, "Admin");
+            CacheComRoles("isto-nao-e-json");
+
+            var resultado = await _controller.Login(LoginValido());
+
+            Assert.IsType<OkObjectResult>(resultado);
+            await _userManager.Received(1).GetRolesAsync(usuario);
         }
 
         [Fact]

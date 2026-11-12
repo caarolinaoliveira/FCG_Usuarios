@@ -157,20 +157,35 @@ namespace FCG.Presentation.Controllers
         private async Task<IList<string>> ObterRolesComCacheAsync(ApplicationUser user)
         {
             var cacheKey = $"{CacheKeyRolesUsuarioPrefix}{user.Id}";
-            var cacheado = await _cache.GetStringAsync(cacheKey);
-
-            if (cacheado is not null)
+            // O cache é só otimização: se o Redis falhar, o login segue pelo Identity.
+            try
             {
-                NewRelic.Api.Agent.NewRelic.GetAgent().CurrentTransaction.AddCustomAttribute("cacheHit", true);
-                return JsonSerializer.Deserialize<List<string>>(cacheado) ?? new List<string>();
+                var cacheado = await _cache.GetStringAsync(cacheKey);
+
+                if (cacheado is not null)
+                {
+                    NewRelic.Api.Agent.NewRelic.GetAgent().CurrentTransaction.AddCustomAttribute("cacheHit", true);
+                    return JsonSerializer.Deserialize<List<string>>(cacheado) ?? new List<string>();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Falha ao ler o cache de roles do usuário {UserId}; consultando o Identity", user.Id);
             }
 
             NewRelic.Api.Agent.NewRelic.GetAgent().CurrentTransaction.AddCustomAttribute("cacheHit", false);
 
             var roles = await _userManager.GetRolesAsync(user);
 
-            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(roles),
-                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) });
+            try
+            {
+                await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(roles),
+                    new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Falha ao gravar o cache de roles do usuário {UserId}", user.Id);
+            }
 
             return roles;
         }

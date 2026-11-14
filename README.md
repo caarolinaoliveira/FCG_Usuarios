@@ -39,9 +39,17 @@ Microsserviço responsável pelo cadastro, autenticação e autorização de usu
 | `RabbitMQ__Senha` | **sim** | Senha do RabbitMQ | - |
 | `RabbitMQ__Host` | não | Host do RabbitMQ | `localhost` |
 | `RabbitMQ__Port` | não | Porta do RabbitMQ | `5672` |
+| `Swagger__Habilitado` | não | Liga o Swagger fora do ambiente `Development` (nele fica sempre ligado) | `false` |
+| `Swagger__RoutePrefix` | não | Caminho da UI e do JSON do Swagger | `swagger` |
 | `NEW_RELIC_LICENSE_KEY` | em produção | Chave de licença da New Relic | - |
 
 Não há credenciais no código nem nos `appsettings.json`. Se uma variável obrigatória faltar, a API não inicia e informa qual chave está faltando. Em produção (AKS) os valores vêm do Azure Key Vault, injetados como variáveis de ambiente.
+
+## Swagger
+
+Em `Development` o Swagger está sempre ligado. Fora dele (por exemplo, `Production` no AKS) só liga com `Swagger__Habilitado=true`, sem mudar o `ASPNETCORE_ENVIRONMENT`. A UI fica em `/<prefixo>/index.html` e o JSON em `/<prefixo>/v1/swagger.json`, com `Swagger__RoutePrefix` (padrão `swagger`). A UI usa a URL do JSON **relativa**, então funciona em qualquer prefixo e atrás de um Ingress **sem rewrite**; atrás do Ingress, use um prefixo próprio (ex.: `swagger-usuarios`) e crie a regra correspondente. O botão **Authorize** aceita o token JWT (esquema `Bearer`) obtido em `POST /api/usuarios/login`.
+
+> O Swagger documenta todas as rotas da API. Deixe `Swagger__Habilitado=false` quando não for necessário.
 
 ## Como rodar localmente
 

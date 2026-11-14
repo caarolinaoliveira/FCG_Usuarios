@@ -42,8 +42,21 @@ using (var scope = app.Services.CreateScope())
 }
 
 
-app.UseSwagger();
-app.UseSwaggerUI();
+// Swagger: sempre em Development; fora dele, só com Swagger:Habilitado=true. Swagger:RoutePrefix muda o caminho da UI e do JSON (padrão "swagger").
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Swagger:Habilitado"))
+{
+    var swaggerPrefixo = app.Configuration["Swagger:RoutePrefix"]?.Trim('/');
+    if (string.IsNullOrWhiteSpace(swaggerPrefixo))
+        swaggerPrefixo = "swagger";
+
+    app.UseSwagger(c => c.RouteTemplate = swaggerPrefixo + "/{documentName}/swagger.json");
+    app.UseSwaggerUI(c =>
+    {
+        c.RoutePrefix = swaggerPrefixo;
+        // Caminho relativo (sem "/" inicial): resolve a partir de onde a UI foi aberta, em qualquer prefixo.
+        c.SwaggerEndpoint("v1/swagger.json", "FCG Usuários v1");
+    });
+}
 
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();

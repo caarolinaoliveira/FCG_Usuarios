@@ -7,24 +7,24 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
 
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
 
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
 
-    <PackageReference Include="MongoDB.Driver" Version="2.28.0" />
-    <PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
-    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.0" />
+    <PackageReference Include="MongoDB.Driver" />
+    <PackageReference Include="RabbitMQ.Client" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
   </ItemGroup>
 
   <ItemGroup>

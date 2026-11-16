@@ -21,8 +21,8 @@ Microsserviço responsável pelo cadastro, autenticação e autorização de usu
 |--------|------|-----------|
 | POST | `/api/usuarios/registrar` | Cadastra novo usuário |
 | POST | `/api/usuarios/login` | Autentica e retorna JWT |
-| GET | `/api/usuarios/perfil` | Retorna dados do usuário autenticado |
-| PUT | `/api/usuarios/alterar-senha` | Altera senha do usuário |
+| GET | `/api/usuarios/por-email?email=` | Retorna o id do usuário com o e-mail informado |
+| POST | `/api/usuarios/alterar-senha` | Altera a senha do usuário (requer token) |
 
 ## Health check
 
@@ -39,6 +39,8 @@ Microsserviço responsável pelo cadastro, autenticação e autorização de usu
 | `RabbitMQ__Senha` | **sim** | Senha do RabbitMQ | - |
 | `RabbitMQ__Host` | não | Host do RabbitMQ | `localhost` |
 | `RabbitMQ__Port` | não | Porta do RabbitMQ | `5672` |
+| `MongoDB__ConnectionString` | não | Connection string do MongoDB (se contiver credenciais, trate como segredo) | `mongodb://localhost:27017` |
+| `Redis__ConnectionString` | não | Endereço do Redis | `localhost:6379` |
 | `Swagger__Habilitado` | não | Liga o Swagger fora do ambiente `Development` (nele fica sempre ligado) | `false` |
 | `Swagger__RoutePrefix` | não | Caminho da UI e do JSON do Swagger | `swagger` |
 | `NEW_RELIC_LICENSE_KEY` | em produção | Chave de licença da New Relic | - |
@@ -81,19 +83,8 @@ dotnet user-secrets set "JwtSettings:Segredo" "troque-esta-chave-com-no-minimo-3
 dotnet run --project FCG.Presentation
 ```
 
-## Como rodar com Docker
-
-```bash
-docker compose up -d     # sobe SQL Server, RabbitMQ, MongoDB e Redis usando as variáveis do .env
-```
-
 ## Deploy no Kubernetes
 
-```bash
-kubectl apply -f k8s/
-kubectl port-forward service/fcg-usuarios-api 5101:80
-```
-
-Swagger disponível em `http://localhost:5101/swagger`
+Os manifestos ficam no repositório [FCG_Orquestracao](https://github.com/caarolinaoliveira/FCG_Orquestracao), junto com o passo a passo para o Kubernetes local e para o AKS.
 
 > ⚠️ Este repositório não contém credenciais. Os exemplos acima usam valores falsos; nunca versione o `.env` nem os seus segredos reais.
